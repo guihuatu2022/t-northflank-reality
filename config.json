@@ -8,10 +8,11 @@
         "tag": "remote",
         "type": "tls",
         "server": "8.8.8.8",
-        "detour": "direct"
+        "server_port": 853
       }
     ],
     "strategy": "prefer_ipv4",
+    "disable_cache": true,
     "final": "remote",
     "rules": [
       {
@@ -57,7 +58,9 @@
     {
       "type": "direct",
       "tag": "direct",
-      "domain_strategy": "prefer_ipv4"
+      "domain_strategy": "prefer_ipv4",
+      "bind_interface": "eth0",
+      "tcp_fast_open": true
     },
     {
       "type": "block",
@@ -72,7 +75,7 @@
       }
     ],
     "final": "direct",
-    "domain_resolver": {
+    "default_domain_resolver": {
       "server": "remote",
       "strategy": "prefer_ipv4"
     },
