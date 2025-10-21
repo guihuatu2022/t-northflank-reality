@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 
+# 显示sing-box版本信息
+echo "sing-box 版本信息:"
+/usr/local/bin/sing-box version
+echo "========================"
+
 # 生成配置文件
 echo "正在生成配置文件..."
 
@@ -57,8 +62,7 @@ cat > /app/config.json << EOF
           },
           "private_key": "${PRIVATE_KEY}",
           "short_id": ["${SHORT_ID}"]
-        },
-        "dest": "${SERVER_NAME}:443"
+        }
       }
     }
   ],
@@ -88,6 +92,15 @@ echo "=================================================="
 echo "生成的配置文件:"
 cat /app/config.json
 echo "=================================================="
+
+# 验证配置文件
+echo "验证配置文件..."
+if /usr/local/bin/sing-box check -c /app/config.json; then
+    echo "配置文件验证通过"
+else
+    echo "配置文件验证失败"
+    exit 1
+fi
 
 # 生成分享链接
 ENCODED_UUID=$(echo -n "${UUID}" | sed 's/+/%2B/g; s/\//%2F/g; s/=/%3D/g')
