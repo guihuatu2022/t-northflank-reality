@@ -3,7 +3,7 @@
   "dns": {
     "servers": [
       {"tag": "cloudflare", "type": "https", "server": "1.1.1.1", "server_port": 443, "detour": "direct"},
-      {"tag": "local", "type": "dns", "server": "223.5.5.5", "server_port": 53, "detour": "direct"}
+      {"tag": "local", "type": "udp", "server": "223.5.5.5", "server_port": 53, "detour": "direct"}
     ],
     "strategy": "prefer_ipv4",
     "final": "cloudflare"
