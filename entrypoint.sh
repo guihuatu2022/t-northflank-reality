@@ -8,12 +8,6 @@ echo "========================"
 # 生成配置文件
 echo "正在生成配置文件..."
 
-# 读取环境变量或使用默认值
-PORT=${PORT:-8443}
-UUID=${UUID:-$(cat /proc/sys/kernel/random/uuid)}
-SHORT_ID=${SHORT_ID:-$(openssl rand -hex 8)}
-SERVER_NAME=${SERVER_NAME:-"www.microsoft.com"}
-
 # 检查并安装openssl（如果缺失）
 if ! command -v openssl &> /dev/null; then
     echo "正在安装openssl..."
@@ -26,70 +20,78 @@ if ! command -v openssl &> /dev/null; then
     fi
 fi
 
-# 如果没有私钥，则生成一对新的REALITY密钥
+# 读取环境变量或使用默认值
+PORT=${PORT:-8443}
+UUID=${UUID:-$(cat /proc/sys/kernel/random/uuid)}
+SHORT_ID=${SHORT_ID:-$(openssl rand -hex 8)}
+SERVER_NAME=${SERVER_NAME:-"m.media-amazon.com"}
+
+# 检查并生成UUID
+if [[ -z "${UUID}" ]]; then
+    echo "生成新的UUID..."
+    UUID=$(cat /proc/sys/kernel/random/uuid)
+fi
+echo "使用的UUID: $UUID"
+
+# 检查并生成SHORT_ID
+if [[ -z "${SHORT_ID}" ]]; then
+    echo "生成新的Short ID..."
+    SHORT_ID=$(openssl rand -hex 8)
+fi
+echo "使用的Short ID: $SHORT_ID"
+
+echo "使用的服务器名称: $SERVER_NAME"
+
+# 检查并生成REALITY密钥对
 if [[ -z "${PRIVATE_KEY}" ]]; then
     echo "生成新的REALITY密钥对..."
-    KEYPAIR=$(/usr/local/bin/sing-box generate reality-keypair)
-    echo "生成的密钥对: $KEYPAIR"
-    PRIVATE_KEY=$(echo "$KEYPAIR" | grep -o '"PrivateKey":"[^"]*"' | cut -d'"' -f4)
-    PUBLIC_KEY=$(echo "$KEYPAIR" | grep -o '"PublicKey":"[^"]*"' | cut -d'"' -f4)
+    # 使用sing-box生成密钥对
+    KEY_OUTPUT=$(/usr/local/bin/sing-box generate reality-keypair 2>&1)
+    echo "密钥对生成输出: $KEY_OUTPUT"
+    
+    # 提取私钥和公钥
+    PRIVATE_KEY=$(echo "$KEY_OUTPUT" | grep -o '"PrivateKey":"[^"]*"' | sed 's/"PrivateKey":"//' | sed 's/"$//')
+    PUBLIC_KEY=$(echo "$KEY_OUTPUT" | grep -o '"PublicKey":"[^"]*"' | sed 's/"PublicKey":"//' | sed 's/"$//')
 else
-    # 如果有私钥，生成对应的公钥
-    PUBLIC_KEY=$(/usr/local/bin/sing-box generate reality-keypair --private-key "$PRIVATE_KEY" | grep -o '"PublicKey":"[^"]*"' | cut -d'"' -f4)
+    # 如果提供了私钥，生成对应的公钥
+    KEY_OUTPUT=$(/usr/local/bin/sing-box generate reality-keypair --private-key "${PRIVATE_KEY}" 2>&1)
+    echo "公钥生成输出: $KEY_OUTPUT"
+    PUBLIC_KEY=$(echo "$KEY_OUTPUT" | grep -o '"PublicKey":"[^"]*"' | sed 's/"PublicKey":"//' | sed 's/"$//')
 fi
 
-echo "提取的私钥: $PRIVATE_KEY"
-echo "提取的公钥: $PUBLIC_KEY"
+echo "使用的私钥: $PRIVATE_KEY"
+echo "使用的公钥: $PUBLIC_KEY"
 
-# 生成配置文件
-cat > /app/config.json << EOF
-{
-  "log": {
-    "level": "info",
-    "timestamp": true
-  },
-  "inbounds": [
-    {
-      "type": "vless",
-      "tag": "vless-in",
-      "listen": "::",
-      "listen_port": ${PORT},
-      "sniff": true,
-      "sniff_override_destination": true,
-      "domain_strategy": "ipv4_only",
-      "users": [
-        {
-          "uuid": "${UUID}",
-          "flow": "xtls-rprx-vision"
-        }
-      ],
-      "tls": {
-        "enabled": true,
-        "server_name": "${SERVER_NAME}",
-        "reality": {
-          "enabled": true,
-          "handshake": {
-            "server": "${SERVER_NAME}",
-            "server_port": 443
-          },
-          "private_key": "${PRIVATE_KEY}",
-          "short_id": ["${SHORT_ID}"]
-        }
-      }
-    }
-  ],
-  "outbounds": [
-    {
-      "type": "direct",
-      "tag": "direct"
-    },
-    {
-      "type": "block",
-      "tag": "block"
-    }
-  ]
-}
-EOF
+# 验证所有参数
+if [[ -z "$UUID" ]]; then
+    echo "错误：UUID生成失败"
+    exit 1
+fi
+
+if [[ -z "$SHORT_ID" ]]; then
+    echo "错误：Short ID生成失败"
+    exit 1
+fi
+
+if [[ -z "$PRIVATE_KEY" || ${#PRIVATE_KEY} -lt 32 ]]; then
+    echo "错误：私钥生成失败或无效"
+    exit 1
+fi
+
+if [[ -z "$PUBLIC_KEY" || ${#PUBLIC_KEY} -lt 32 ]]; then
+    echo "错误：公钥生成失败或无效"
+    exit 1
+fi
+
+# 从模板生成配置文件
+echo "从模板生成配置文件..."
+cp /app/config.json /tmp/config.json.template
+sed -i "s/UUID_PLACEHOLDER/${UUID}/g" /tmp/config.json.template
+sed -i "s/SNI_PLACEHOLDER/${SERVER_NAME}/g" /tmp/config.json.template
+sed -i "s/PRIVATE_KEY_PLACEHOLDER/${PRIVATE_KEY}/g" /tmp/config.json.template
+sed -i "s/SHORT_ID_PLACEHOLDER/${SHORT_ID}/g" /tmp/config.json.template
+
+mv /tmp/config.json.template /app/config.json
 
 # 显示配置信息
 echo "==================== 配置信息 ===================="
@@ -111,6 +113,7 @@ if /usr/local/bin/sing-box check -c /app/config.json; then
     echo "配置文件验证通过"
 else
     echo "配置文件验证失败"
+    cat /app/config.json
     exit 1
 fi
 
@@ -129,6 +132,18 @@ echo "${SHARE_LINK}"
 echo "=================================================="
 echo ""
 echo "在 Northflank 上，你需要在服务配置中查看分配的域名或 IP 地址"
+echo ""
+echo "客户端配置参数："
+echo "  UUID: ${UUID}"
+echo "  服务器地址: 部署后替换为 Northflank 分配的地址"
+echo "  服务器端口: ${PORT}"
+echo "  流控: xtls-rprx-vision"
+echo "  传输协议: tcp"
+echo "  TLS: reality"
+echo "  SNI: ${SERVER_NAME}"
+echo "  指纹: chrome"
+echo "  PublicKey: ${PUBLIC_KEY}"
+echo "  ShortID: ${SHORT_ID}"
 echo ""
 
 # 启动sing-box
