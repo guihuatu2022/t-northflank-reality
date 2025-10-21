@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# 调试：确认 bash 环境
+echo "Starting script in bash..."
+
 # 默认值
 UUID=${UUID:-$(uuidgen)}
 REALITY_PRIVATE_KEY=${REALITY_PRIVATE_KEY:-$(sing-box generate reality-keypair | grep "PrivateKey" | cut -d'"' -f4)}
@@ -29,6 +32,10 @@ echo "Multiplex Enabled: $ENABLE_MULTIPLEX"
 # 验证 sing-box 版本
 echo "Sing-box Version:"
 sing-box version
+
+# 调试：检查 config.json
+echo "Config file content:"
+cat /etc/sing-box/config.json
 
 # 运行 sing-box
 exec sing-box run -c /etc/sing-box/config.json || {
