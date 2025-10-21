@@ -49,14 +49,27 @@ if [[ -z "${PRIVATE_KEY}" ]]; then
     KEY_OUTPUT=$(/usr/local/bin/sing-box generate reality-keypair 2>&1)
     echo "密钥对生成输出: $KEY_OUTPUT"
     
-    # 提取私钥和公钥
-    PRIVATE_KEY=$(echo "$KEY_OUTPUT" | grep -o '"PrivateKey":"[^"]*"' | sed 's/"PrivateKey":"//' | sed 's/"$//')
-    PUBLIC_KEY=$(echo "$KEY_OUTPUT" | grep -o '"PublicKey":"[^"]*"' | sed 's/"PublicKey":"//' | sed 's/"$//')
+    # 提取私钥和公钥（根据实际输出格式）
+    if echo "$KEY_OUTPUT" | grep -q "PrivateKey:"; then
+        # 处理新格式输出（每行一个字段）
+        PRIVATE_KEY=$(echo "$KEY_OUTPUT" | grep "PrivateKey:" | awk '{print $2}')
+        PUBLIC_KEY=$(echo "$KEY_OUTPUT" | grep "PublicKey:" | awk '{print $2}')
+    else
+        # 处理旧格式输出（JSON格式）
+        PRIVATE_KEY=$(echo "$KEY_OUTPUT" | grep -o '"PrivateKey":"[^"]*"' | sed 's/"PrivateKey":"//' | sed 's/"$//')
+        PUBLIC_KEY=$(echo "$KEY_OUTPUT" | grep -o '"PublicKey":"[^"]*"' | sed 's/"PublicKey":"//' | sed 's/"$//')
+    fi
 else
     # 如果提供了私钥，生成对应的公钥
     KEY_OUTPUT=$(/usr/local/bin/sing-box generate reality-keypair --private-key "${PRIVATE_KEY}" 2>&1)
     echo "公钥生成输出: $KEY_OUTPUT"
-    PUBLIC_KEY=$(echo "$KEY_OUTPUT" | grep -o '"PublicKey":"[^"]*"' | sed 's/"PublicKey":"//' | sed 's/"$//')
+    if echo "$KEY_OUTPUT" | grep -q "PublicKey:"; then
+        # 处理新格式输出（每行一个字段）
+        PUBLIC_KEY=$(echo "$KEY_OUTPUT" | grep "PublicKey:" | awk '{print $2}')
+    else
+        # 处理旧格式输出（JSON格式）
+        PUBLIC_KEY=$(echo "$KEY_OUTPUT" | grep -o '"PublicKey":"[^"]*"' | sed 's/"PublicKey":"//' | sed 's/"$//')
+    fi
 fi
 
 echo "使用的私钥: $PRIVATE_KEY"
