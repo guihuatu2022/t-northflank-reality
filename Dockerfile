@@ -1,8 +1,8 @@
 # 使用官方 sing-box 镜像（latest 为 1.12+）
 FROM ghcr.io/sagernet/sing-box:latest
 
-# 安装 bash
-RUN apk add --no-cache bash
+# 安装 bash、uuidgen 和 openssl
+RUN apk add --no-cache bash util-linux openssl
 
 # 复制配置和启动脚本
 COPY config.json /etc/sing-box/config.json
