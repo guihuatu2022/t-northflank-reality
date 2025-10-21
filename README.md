@@ -19,10 +19,13 @@
 - 示例 URI：`vless://{{UUID}}@your-domain:443?security=reality&pbk={{PUBLIC_KEY}}&sid={{SHORT_ID}}&type=tcp&fp=chrome&sni={{SNI}}#Northflank-Reality-1.12`
 
 ## 调试
-- 查看 Northflank 日志，确认 `Sing-box Version` 和生成的配置。
-- 若失败，检查 `/start.sh` 执行错误或 `config.json` 格式（JSON 需严格，无多余逗号）。
-- 测试：本地运行 `docker build -t test . && docker run -p 443:443 test`.
+- 查看 Northflank 日志，确认 `Starting script in bash...` 和 `Sing-box Version` 输出。
+- 检查 `Config file content` 是否正确替换变量（无占位符）。
+- 若失败，验证：
+  - `sing-box run -c /etc/sing-box/config.json` 是否报 JSON 错误。
+  - 环境变量是否正确注入（Northflank UI）。
+- 本地测试：`docker build -t test . && docker run -p 443:443 test`.
 
 ## 变更日志
-- 修复：`CMD ["/bin/bash", "/start.sh"]` 确保脚本正确执行。
+- 修复：添加 `ENTRYPOINT ["/bin/bash"]` 覆盖默认 sing-box 入口。
 - 兼容 sing-box 1.12+：DNS 重构、TLS 碎片、多路复用显式启用。
