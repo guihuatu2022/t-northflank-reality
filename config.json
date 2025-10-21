@@ -1,34 +1,12 @@
 {
-  "log": {
-    "level": "info"
-  },
+  "log": {"level": "info"},
   "dns": {
     "servers": [
-      {
-        "tag": "cloudflare",
-        "type": "https",
-        "server": "1.1.1.1",
-        "server_port": 443,
-        "address_resolver": "local",
-        "detour": "direct"
-      },
-      {
-        "tag": "local",
-        "type": "dns",
-        "server": "223.5.5.5",
-        "server_port": 53,
-        "detour": "direct"
-      }
+      {"tag": "cloudflare", "type": "https", "server": "1.1.1.1", "server_port": 443, "detour": "direct"},
+      {"tag": "local", "type": "dns", "server": "223.5.5.5", "server_port": 53, "detour": "direct"}
     ],
     "strategy": "prefer_ipv4",
-    "disable_cache": true,
-    "final": "cloudflare",
-    "rules": [
-      {
-        "outbound": ["any"],
-        "server": "cloudflare"
-      }
-    ]
+    "final": "cloudflare"
   },
   "inbounds": [
     {
@@ -37,77 +15,37 @@
       "listen": "::",
       "listen_port": {{SERVER_PORT}},
       "reuse_addr": true,
-      "users": [
-        {
-          "uuid": "{{UUID}}",
-          "flow": ""
-        }
-      ],
+      "users": [{"uuid": "{{UUID}}"}],
       "network": "tcp",
-      "multiplex": {
-        "enabled": {{ENABLE_MULTIPLEX}}
-      },
+      "multiplex": {"enabled": {{ENABLE_MULTIPLEX}}},
       "tls": {
         "enabled": true,
         "server_name": "{{SNI}}",
-        "fragment": {
-          "tls_fragment": true,
-          "tls_record_fragment": true
-        },
         "reality": {
           "enabled": true,
           "private_key": "{{REALITY_PRIVATE_KEY}}",
           "short_id": ["{{SHORT_ID}}"]
         }
-      },
-      "sniff": true
+      }
     }
   ],
   "outbounds": [
-    {
-      "type": "direct",
-      "tag": "direct",
-      "domain_strategy": "prefer_ipv4",
-      "bind_interface": "eth0",
-      "tcp_fast_open": true
-    },
-    {
-      "type": "block",
-      "tag": "block"
-    }
+    {"type": "direct", "tag": "direct", "domain_strategy": "prefer_ipv4"},
+    {"type": "block", "tag": "block"}
   ],
   "route": {
     "rules": [
-      {
-        "inbound": "vless-in",
-        "outbound": "direct"
-      },
+      {"inbound": "vless-in", "outbound": "direct"},
       {
         "ip_cidr": [
-          "0.0.0.0/8",
-          "10.0.0.0/8",
-          "100.64.0.0/10",
-          "127.0.0.0/8",
-          "169.254.0.0/16",
-          "172.16.0.0/12",
-          "192.0.0.0/24",
-          "192.0.2.0/24",
-          "192.168.0.0/16",
-          "198.18.0.0/15",
-          "198.51.100.0/24",
-          "203.0.113.0/24",
-          "::1/128",
-          "fc00::/7",
-          "fe80::/10"
+          "0.0.0.0/8", "10.0.0.0/8", "100.64.0.0/10", "127.0.0.0/8",
+          "169.254.0.0/16", "172.16.0.0/12", "192.0.0.0/24", "192.0.2.0/24",
+          "192.168.0.0/16", "198.18.0.0/15", "198.51.100.0/24", "203.0.113.0/24",
+          "::1/128", "fc00::/7", "fe80::/10"
         ],
         "outbound": "block"
       }
     ],
-    "final": "direct",
-    "default_domain_resolver": {
-      "server": "cloudflare",
-      "strategy": "prefer_ipv4"
-    },
-    "rule_set": []
+    "final": "direct"
   }
 }
