@@ -13,7 +13,7 @@
     ],
     "rules": [
       {
-        "outbound": ["any"],
+        "query_type": ["A", "AAAA"],
         "server": "remote"
       }
     ]
@@ -48,15 +48,14 @@
           "short_id": ["{{SHORT_ID}}"]
         }
       },
-      "sniff": true,
-      "sniff_override_destination": true
+      "sniff": true
     }
   ],
   "outbounds": [
     {
       "type": "direct",
       "tag": "direct",
-      "domain_strategy": "prefer_ipv6"
+      "domain_strategy": "prefer_ipv4"
     },
     {
       "type": "block",
@@ -67,15 +66,14 @@
     "rules": [
       {
         "inbound": "vless-in",
-        "action": "sniff",
-        "timeout": "5s"
-      },
-      {
-        "inbound": "vless-in",
         "outbound": "direct"
       }
     ],
     "final": "direct",
+    "default_domain_resolver": {
+      "server": "remote",
+      "strategy": "prefer_ipv4"
+    },
     "rule_set": []
   }
 }
