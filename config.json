@@ -29,8 +29,7 @@
           },
           "private_key": "private_key",
           "short_id": [""]
-        },
-        "dest": "www.microsoft.com:443"
+        }
       }
     }
   ],
