@@ -5,19 +5,28 @@
   "dns": {
     "servers": [
       {
-        "tag": "remote",
-        "type": "tls",
-        "server": "8.8.8.8",
-        "server_port": 853
+        "tag": "cloudflare",
+        "type": "https",
+        "server": "1.1.1.1",
+        "server_port": 443,
+        "address_resolver": "local",
+        "detour": "direct"
+      },
+      {
+        "tag": "local",
+        "type": "dns",
+        "server": "223.5.5.5",
+        "server_port": 53,
+        "detour": "direct"
       }
     ],
     "strategy": "prefer_ipv4",
     "disable_cache": true,
-    "final": "remote",
+    "final": "cloudflare",
     "rules": [
       {
-        "query_type": ["A", "AAAA"],
-        "server": "remote"
+        "outbound": ["any"],
+        "server": "cloudflare"
       }
     ]
   },
@@ -72,11 +81,31 @@
       {
         "inbound": "vless-in",
         "outbound": "direct"
+      },
+      {
+        "ip_cidr": [
+          "0.0.0.0/8",
+          "10.0.0.0/8",
+          "100.64.0.0/10",
+          "127.0.0.0/8",
+          "169.254.0.0/16",
+          "172.16.0.0/12",
+          "192.0.0.0/24",
+          "192.0.2.0/24",
+          "192.168.0.0/16",
+          "198.18.0.0/15",
+          "198.51.100.0/24",
+          "203.0.113.0/24",
+          "::1/128",
+          "fc00::/7",
+          "fe80::/10"
+        ],
+        "outbound": "block"
       }
     ],
     "final": "direct",
     "default_domain_resolver": {
-      "server": "remote",
+      "server": "cloudflare",
       "strategy": "prefer_ipv4"
     },
     "rule_set": []
