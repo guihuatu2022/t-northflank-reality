@@ -1,0 +1,98 @@
+#!/usr/bin/env bash
+
+# 生成配置文件
+echo "正在生成配置文件..."
+
+# 读取环境变量或使用默认值
+PORT=${PORT:-443}
+UUID=${UUID:-$(cat /proc/sys/kernel/random/uuid)}
+SHORT_ID=${SHORT_ID:-$(openssl rand -hex 8)}
+SERVER_NAME=${SERVER_NAME:-"www.microsoft.com"}
+
+# 如果没有私钥，则生成一对新的REALITY密钥
+if [[ -z "${PRIVATE_KEY}" ]]; then
+    echo "生成新的REALITY密钥对..."
+    KEYPAIR=$(/usr/local/bin/sing-box generate reality-keypair)
+    PRIVATE_KEY=$(echo "$KEYPAIR" | grep "PrivateKey" | cut -d '"' -f 2)
+    PUBLIC_KEY=$(echo "$KEYPAIR" | grep "PublicKey" | cut -d '"' -f 2)
+else
+    # 如果有私钥，生成对应的公钥
+    PUBLIC_KEY=$(/usr/local/bin/sing-box generate reality-keypair --private-key "$PRIVATE_KEY" | grep "PublicKey" | cut -d '"' -f 2)
+fi
+
+# 生成配置文件
+cat > /app/config.json << EOF
+{
+  "log": {
+    "level": "info",
+    "timestamp": true
+  },
+  "inbounds": [
+    {
+      "type": "vless",
+      "tag": "vless-in",
+      "listen": "::",
+      "listen_port": ${PORT},
+      "sniff": true,
+      "sniff_override_destination": true,
+      "domain_strategy": "ipv4_only",
+      "users": [
+        {
+          "uuid": "${UUID}",
+          "flow": "xtls-rprx-vision"
+        }
+      ],
+      "tls": {
+        "enabled": true,
+        "server_name": "${SERVER_NAME}",
+        "reality": {
+          "enabled": true,
+          "handshake": {
+            "server": "${SERVER_NAME}",
+            "server_port": 443
+          },
+          "private_key": "${PRIVATE_KEY}",
+          "short_id": ["${SHORT_ID}"]
+        }
+      }
+    }
+  ],
+  "outbounds": [
+    {
+      "type": "direct",
+      "tag": "direct"
+    },
+    {
+      "type": "block",
+      "tag": "block"
+    }
+  ]
+}
+EOF
+
+# 显示配置信息
+echo "==================== 配置信息 ===================="
+echo "端口 (PORT): ${PORT}"
+echo "UUID: ${UUID}"
+echo "服务器名称 (SERVER_NAME): ${SERVER_NAME}"
+echo "Short ID: ${SHORT_ID}"
+echo "Public Key: ${PUBLIC_KEY}"
+echo "=================================================="
+
+# 生成分享链接
+ENCODED_UUID=$(echo -n "${UUID}" | sed 's/+/%2B/g; s/\//%2F/g; s/=/%3D/g')
+ENCODED_SNI=$(echo -n "${SERVER_NAME}" | sed 's/+/%2B/g; s/\//%2F/g; s/=/%3D/g')
+ENCODED_PBK=$(echo -n "${PUBLIC_KEY}" | sed 's/+/%2B/g; s/\//%2F/g; s/=/%3D/g')
+ENCODED_SID=$(echo -n "${SHORT_ID}" | sed 's/+/%2B/g; s/\//%2F/g; s/=/%3D/g')
+
+SHARE_LINK="vless://${ENCODED_UUID}@0.0.0.0:${PORT}?encryption=none&flow=xtls-rprx-vision&security=reality&sni=${ENCODED_SNI}&fp=chrome&pbk=${ENCODED_PBK}&sid=${ENCODED_SID}&type=tcp&headerType=none#northflank-reality"
+
+echo ""
+echo "==================== 分享链接 ===================="
+echo "${SHARE_LINK}"
+echo "=================================================="
+echo ""
+
+# 启动sing-box
+echo "启动sing-box..."
+/usr/local/bin/sing-box run -c /app/config.json
