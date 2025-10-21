@@ -7,10 +7,11 @@
       {
         "tag": "remote",
         "type": "tls",
-        "server": "8.8.8.8",
-        "strategy": "prefer_ipv4"
+        "address": "8.8.8.8"
       }
     ],
+    "strategy": "prefer_ipv4",
+    "final": "remote",
     "rules": [
       {
         "query_type": ["A", "AAAA"],
