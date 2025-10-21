@@ -13,12 +13,16 @@ SERVER_NAME=${SERVER_NAME:-"www.microsoft.com"}
 if [[ -z "${PRIVATE_KEY}" ]]; then
     echo "生成新的REALITY密钥对..."
     KEYPAIR=$(/usr/local/bin/sing-box generate reality-keypair)
-    PRIVATE_KEY=$(echo "$KEYPAIR" | grep "PrivateKey" | cut -d '"' -f 2)
-    PUBLIC_KEY=$(echo "$KEYPAIR" | grep "PublicKey" | cut -d '"' -f 2)
+    echo "生成的密钥对: $KEYPAIR"
+    PRIVATE_KEY=$(echo "$KEYPAIR" | grep -o '"PrivateKey":"[^"]*"' | cut -d'"' -f4)
+    PUBLIC_KEY=$(echo "$KEYPAIR" | grep -o '"PublicKey":"[^"]*"' | cut -d'"' -f4)
 else
     # 如果有私钥，生成对应的公钥
-    PUBLIC_KEY=$(/usr/local/bin/sing-box generate reality-keypair --private-key "$PRIVATE_KEY" | grep "PublicKey" | cut -d '"' -f 2)
+    PUBLIC_KEY=$(/usr/local/bin/sing-box generate reality-keypair --private-key "$PRIVATE_KEY" | grep -o '"PublicKey":"[^"]*"' | cut -d'"' -f4)
 fi
+
+echo "提取的私钥: $PRIVATE_KEY"
+echo "提取的公钥: $PUBLIC_KEY"
 
 # 生成配置文件
 cat > /app/config.json << EOF
@@ -53,7 +57,8 @@ cat > /app/config.json << EOF
           },
           "private_key": "${PRIVATE_KEY}",
           "short_id": ["${SHORT_ID}"]
-        }
+        },
+        "dest": "${SERVER_NAME}:443"
       }
     }
   ],
@@ -77,6 +82,11 @@ echo "UUID: ${UUID}"
 echo "服务器名称 (SERVER_NAME): ${SERVER_NAME}"
 echo "Short ID: ${SHORT_ID}"
 echo "Public Key: ${PUBLIC_KEY}"
+echo "=================================================="
+
+# 显示生成的配置文件用于调试
+echo "生成的配置文件:"
+cat /app/config.json
 echo "=================================================="
 
 # 生成分享链接
