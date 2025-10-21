@@ -6,7 +6,8 @@
     "servers": [
       {
         "tag": "remote",
-        "address": "tls://8.8.8.8"
+        "address": "tls://8.8.8.8",
+        "strategy": "prefer_ipv4"
       }
     ],
     "rules": [
@@ -14,9 +15,7 @@
         "outbound": ["any"],
         "server": "remote"
       }
-    ],
-    "default_nameserver": ["remote"],
-    "nameserver_policy": "disable_cache"
+    ]
   },
   "inbounds": [
     {
@@ -65,9 +64,6 @@
     }
   ],
   "route": {
-    "domain_resolver": {
-      "default": ["remote"]
-    },
     "rules": [
       {
         "inbound": "vless-in",
