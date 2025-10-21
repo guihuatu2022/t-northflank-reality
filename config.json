@@ -1,0 +1,79 @@
+{
+  "log": {
+    "level": "info"
+  },
+  "dns": {
+    "servers": [
+      {
+        "tag": "remote",
+        "address": "tls://8.8.8.8"
+      }
+    ],
+    "rules": [
+      {
+        "outbound": ["any"],
+        "server": "remote"
+      }
+    ],
+    "default_nameserver": ["remote"],
+    "nameserver_policy": "disable_cache"
+  },
+  "inbounds": [
+    {
+      "type": "vless",
+      "tag": "vless-in",
+      "listen": "::",
+      "listen_port": {{SERVER_PORT}},
+      "listen_options": {
+        "reuse_addr": true
+      },
+      "users": [
+        {
+          "uuid": "{{UUID}}",
+          "flow": ""
+        }
+      ],
+      "network": "tcp",
+      "multiplex": {
+        "enabled": {{ENABLE_MULTIPLEX}}
+      },
+      "tls": {
+        "enabled": true,
+        "server_name": "{{SNI}}",
+        "fragment": {
+          "tls_fragment": true,
+          "tls_record_fragment": true
+        },
+        "reality": {
+          "enabled": true,
+          "private_key": "{{REALITY_PRIVATE_KEY}}",
+          "short_id": ["{{SHORT_ID}}"]
+        }
+      },
+      "sniff": true,
+      "sniff_override_destination": true
+    }
+  ],
+  "outbounds": [
+    {
+      "type": "direct",
+      "tag": "direct"
+    },
+    {
+      "type": "block",
+      "tag": "block"
+    }
+  ],
+  "route": {
+    "domain_resolver": {
+      "default": ["remote"]
+    },
+    "rules": [
+      {
+        "inbound": "vless-in",
+        "outbound": "direct"
+      }
+    ],
+    "rule_set": []
+  }
+}
