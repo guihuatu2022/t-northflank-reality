@@ -4,7 +4,7 @@
 echo "正在生成配置文件..."
 
 # 读取环境变量或使用默认值
-PORT=${PORT:-443}
+PORT=${PORT:-8443}
 UUID=${UUID:-$(cat /proc/sys/kernel/random/uuid)}
 SHORT_ID=${SHORT_ID:-$(openssl rand -hex 8)}
 SERVER_NAME=${SERVER_NAME:-"www.microsoft.com"}
@@ -89,8 +89,11 @@ SHARE_LINK="vless://${ENCODED_UUID}@0.0.0.0:${PORT}?encryption=none&flow=xtls-rp
 
 echo ""
 echo "==================== 分享链接 ===================="
+echo "注意：部署完成后，请将链接中的 0.0.0.0 替换为 Northflank 分配给你的域名或 IP 地址"
 echo "${SHARE_LINK}"
 echo "=================================================="
+echo ""
+echo "在 Northflank 上，你需要在服务配置中查看分配的域名或 IP 地址"
 echo ""
 
 # 启动sing-box
