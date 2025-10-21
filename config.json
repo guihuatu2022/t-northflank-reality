@@ -23,9 +23,7 @@
       "tag": "vless-in",
       "listen": "::",
       "listen_port": {{SERVER_PORT}},
-      "listen_options": {
-        "reuse_addr": true
-      },
+      "tcp_reuseaddr": true,
       "users": [
         {
           "uuid": "{{UUID}}",
