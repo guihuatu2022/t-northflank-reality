@@ -20,6 +20,18 @@ if ! command -v openssl &> /dev/null; then
     fi
 fi
 
+# 检查并安装wget（如果缺失）
+if ! command -v wget &> /dev/null; then
+    echo "正在安装wget..."
+    if command -v apk &> /dev/null; then
+        apk add --no-cache wget
+    elif command -v apt-get &> /dev/null; then
+        apt-get update && apt-get install -y wget
+    elif command -v yum &> /dev/null; then
+        yum install -y wget
+    fi
+fi
+
 # 读取环境变量或使用默认值
 PORT=${PORT:-8443}
 UUID=${UUID:-$(cat /proc/sys/kernel/random/uuid)}
@@ -130,6 +142,12 @@ else
     exit 1
 fi
 
+# 获取公网IP地址
+PUBLIC_IP=""
+if command -v wget &> /dev/null; then
+    PUBLIC_IP=$(wget -qO- https://ipinfo.io/ip 2>/dev/null)
+fi
+
 # 生成分享链接
 ENCODED_UUID=$(echo -n "${UUID}" | sed 's/+/%2B/g; s/\//%2F/g; s/=/%3D/g')
 ENCODED_SNI=$(echo -n "${SERVER_NAME}" | sed 's/+/%2B/g; s/\//%2F/g; s/=/%3D/g')
@@ -140,7 +158,12 @@ SHARE_LINK="vless://${ENCODED_UUID}@0.0.0.0:${PORT}?encryption=none&flow=xtls-rp
 
 echo ""
 echo "==================== 分享链接 ===================="
-echo "注意：部署完成后，请将链接中的 0.0.0.0 替换为 Northflank 分配给你的域名或 IP 地址"
+if [[ -n "$PUBLIC_IP" ]]; then
+    echo "容器公网IP: $PUBLIC_IP"
+    echo "你可以使用以下链接连接（将0.0.0.0替换为公网IP）:"
+else
+    echo "注意：部署完成后，请将链接中的 0.0.0.0 替换为 Northflank 分配给你的域名或 IP 地址"
+fi
 echo "${SHARE_LINK}"
 echo "=================================================="
 echo ""
