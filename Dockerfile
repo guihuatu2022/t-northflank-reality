@@ -1,10 +1,22 @@
-FROM debian:bookworm-slim
-RUN apt-get update && apt-get install -y --no-install-recommends wget uuid-runtime openssl curl && rm -rf /var/lib/apt/lists/*
-ENV SINGBOX_VERSION=v1.12.3
-ENV SINGBOX_ARCH=linux-amd64
-RUN set -eux; SINGBOX_URL="https://github.com/SagerNet/sing-box/releases/download/${SINGBOX_VERSION}/sing-box-${SINGBOX_VERSION}-${SINGBOX_ARCH}.tar.gz"; wget -q -O singbox.tar.gz "${SINGBOX_URL}"; tar -zxf singbox.tar.gz --strip-components=1; cp sing-box /usr/local/bin/; chmod +x /usr/local/bin/sing-box; sing-box --version; rm -rf singbox.tar.gz sing-box
-RUN mkdir -p /etc/singbox /data /var/log/singbox && chmod -R 777 /etc/singbox /data /var/log/singbox
+# 使用 singbox 官方镜像（最新稳定版，对应 1.12+）
+FROM ghcr.io/sagernet/sing-box:latest
+
+# 安装必要工具（生成UUID、随机数等）
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    uuid-runtime \
+    openssl \
+    && rm -rf /var/lib/apt/lists/*
+
+# 创建持久化目录并设置权限
+RUN mkdir -p /data/reality-keys /etc/singbox /var/log/singbox \
+    && chmod -R 777 /data /etc/singbox /var/log/singbox
+
+# 挂载持久卷（保存密钥）
 VOLUME ["/data"]
+
+# 复制启动脚本
 COPY start.sh /start.sh
 RUN chmod +x /start.sh
+
+# 启动命令
 CMD ["/start.sh"]
