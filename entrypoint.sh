@@ -14,6 +14,18 @@ UUID=${UUID:-$(cat /proc/sys/kernel/random/uuid)}
 SHORT_ID=${SHORT_ID:-$(openssl rand -hex 8)}
 SERVER_NAME=${SERVER_NAME:-"www.microsoft.com"}
 
+# 检查并安装openssl（如果缺失）
+if ! command -v openssl &> /dev/null; then
+    echo "正在安装openssl..."
+    if command -v apk &> /dev/null; then
+        apk add --no-cache openssl
+    elif command -v apt-get &> /dev/null; then
+        apt-get update && apt-get install -y openssl
+    elif command -v yum &> /dev/null; then
+        yum install -y openssl
+    fi
+fi
+
 # 如果没有私钥，则生成一对新的REALITY密钥
 if [[ -z "${PRIVATE_KEY}" ]]; then
     echo "生成新的REALITY密钥对..."
