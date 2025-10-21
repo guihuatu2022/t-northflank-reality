@@ -6,7 +6,8 @@
     "servers": [
       {
         "tag": "remote",
-        "address": "tls://8.8.8.8",
+        "type": "tls",
+        "server": "8.8.8.8",
         "strategy": "prefer_ipv4"
       }
     ],
@@ -23,7 +24,7 @@
       "tag": "vless-in",
       "listen": "::",
       "listen_port": {{SERVER_PORT}},
-      "tcp_reuseaddr": true,
+      "reuse_addr": true,
       "users": [
         {
           "uuid": "{{UUID}}",
@@ -54,7 +55,8 @@
   "outbounds": [
     {
       "type": "direct",
-      "tag": "direct"
+      "tag": "direct",
+      "domain_strategy": "prefer_ipv6"
     },
     {
       "type": "block",
@@ -65,9 +67,15 @@
     "rules": [
       {
         "inbound": "vless-in",
+        "action": "sniff",
+        "timeout": "5s"
+      },
+      {
+        "inbound": "vless-in",
         "outbound": "direct"
       }
     ],
+    "final": "direct",
     "rule_set": []
   }
 }
